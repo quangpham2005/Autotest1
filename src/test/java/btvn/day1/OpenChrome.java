@@ -14,7 +14,6 @@ public class OpenChrome {
         driver.get(" https://serenity-bdd.github.io/");
         WebElement inputUsername = driver.findElement(By.id("user-name"));
         inputUsername.sendKeys("standard_user");
-
         WebElement inputPassword = driver.findElement(By.id("password"));
         inputPassword.sendKeys("secret_sauce");
 
