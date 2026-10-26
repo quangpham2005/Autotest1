@@ -16,7 +16,6 @@ public class OpenChrome {
         inputUsername.sendKeys("standard_user");
         WebElement inputPassword = driver.findElement(By.id("password"));
         inputPassword.sendKeys("secret_sauce");
-
         WebElement buttonLogin = driver.findElement(By.id("login-button"));
         buttonLogin.click();
         driver.quit();
