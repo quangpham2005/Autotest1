@@ -18,6 +18,6 @@ public class OpenChrome {
         inputPassword.sendKeys("secret_sauce");
         WebElement buttonLogin = driver.findElement(By.id("login-button"));
         buttonLogin.click();
-        driver.quit();
+        //driver.quit();
     }
 }
