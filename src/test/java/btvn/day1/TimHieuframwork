@@ -66,3 +66,21 @@ Phong cách	          BDD (Gherkin) + Screenplay	             Code test trực t
 Độ khó cài đặt	          Trung bình (JDK, Maven)	             Dễ (1 lệnh npm)
 Báo cáo	              Living documentation của Serenity	         HTML report, Trace Viewer
 Phù hợp	              Dự án cần BA/QA/dev cùng đọc kịch bản	     Test E2E nhanh, hiện đại
+Trả lời câu hỏi
+1. Automation test là gì?
+
+Automation test là việc tái hiện lại các bước kiểm thử mà 1 manual tester thực hiện thành kịch bản để máy thực thi tự động và báo cáo kết quả đạt hoặc không đạt
+2. Tại sao cần auto test?
+
+-Nhanh
+-Chi phí thấp
+-Độ tin cậy cao
+-Khả năng lặp
+-Khả năng tái sủ dụng
+3. Khi nào cần chạy kịch bản auto test?
+
+Khi dev commit/push code hoặc tạo pull request (chạy tự động trong CI).
+Khi build hoặc deploy lên môi trường test, staging.
+Trước khi release để chắc chắn bản phát hành ổn định.
+Sau khi sửa lỗi hoặc thêm tính năng (regression test).
+Khi nâng cấp trình duyệt, thư viện hoặc hạ tầng. Ví dụ cảnh báo CDP 156 bạn gặp là dấu hiệu Chrome đã cập nhật lên bản mới hơn Selenium.
