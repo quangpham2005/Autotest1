@@ -11,13 +11,7 @@ public class OpenChrome {
     public static void main(String[] args) {
         driver = new ChromeDriver();
         driver.manage().window().maximize();
-        driver.get(" https://serenity-bdd.github.io/");
-        WebElement inputUsername = driver.findElement(By.id("user-name"));
-        inputUsername.sendKeys("standard_user");
-        WebElement inputPassword = driver.findElement(By.id("password"));
-        inputPassword.sendKeys("secret_sauce");
-        WebElement buttonLogin = driver.findElement(By.id("login-button"));
-        buttonLogin.click();
+        driver.get("https://serenity-bdd.github.io/");
         driver.quit();
     }
 }

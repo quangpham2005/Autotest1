@@ -1,0 +1,68 @@
+Tìm hiểu framework auto test
+1. Cucumber + Serenity BDD + Screenplay
+
+Nguồn: https://serenity-bdd.github.io/docs/tutorials/cucumber-screenplay
+
+Là gì?
+
+Cucumber: viết đặc tả (specification) bằng ngôn ngữ Gherkin trong file .feature (Given / When / Then), gần với tiếng người, cả BA, tester và dev đều đọc được.
+Serenity BDD: thư viện Java chạy các kịch bản đó, đồng thời sinh báo cáo đẹp (living documentation).
+Screenplay pattern: cách tổ chức code theo hướng "diễn viên" (Actor) thực hiện Task / Action và đặt Question, giúp code dễ đọc, dễ bảo trì hơn Page Object truyền thống.
+
+Cấu trúc thư mục:
+
+src/test/java/starter/stepdefinitions   # code gắn với các bước trong .feature (glue code)
+src/test/java/starter/helpers           # Page Object, Task, Action
+src/test/resources/features             # file .feature
+
+Luồng làm việc:
+
+Viết .feature, ví dụ:
+gherkin
+   Feature: Add new item to TODO list
+   Scenario: Add buying milk to the list
+     Given Rama is looking at his TODO list
+     When he adds "Buy some milk" to the list
+     Then he sees "Buy some milk" as an item in the TODO list
+Tạo Step Definitions (@Given, @When, @Then), ban đầu ném PendingException.
+Viết helper: PageObject (có @DefaultUrl, các Target định vị phần tử), Task (ví dụ NavigateTo, AddAnItem).
+Gọi trong step bằng actor.wasAbleTo(...), actor.attemptsTo(...), kiểm tra bằng Ensure.that(...).
+Chạy mvn clean verify.
+Xem báo cáo tại target/site/serenity/index.html.
+
+Ưu điểm: kịch bản dễ đọc, báo cáo trực quan (living documentation), phù hợp làm việc nhóm giữa nghiệp vụ và kỹ thuật. Nhược điểm: cần biết Java, cấu hình ban đầu nặng hơn, chạy chậm hơn.
+
+2. Playwright
+
+Nguồn: https://playwright.dev/docs/intro
+
+Là gì? Framework test end-to-end cho web hiện đại, tích hợp sẵn test runner, assertion, cô lập test và chạy song song.
+
+Hỗ trợ trình duyệt: Chromium, WebKit, Firefox (Windows, Linux, macOS), chạy headless hoặc headed, có giả lập mobile.
+Ngôn ngữ: Node.js (TypeScript/JavaScript), Python, Java, .NET.
+
+Cài đặt:
+
+bash
+npm init playwright@latest
+
+Chạy test:
+
+bash
+npx playwright test                  # chạy tất cả (headless, song song)
+npx playwright test --headed         # thấy cửa sổ trình duyệt
+npx playwright test --project=chromium
+npx playwright test --ui             # UI Mode: xem từng bước, debug
+npx playwright show-report           # mở báo cáo HTML
+
+Tính năng nổi bật: auto-waiting (tự chờ phần tử sẵn sàng), locators, web-first assertions, Codegen (ghi thao tác sinh code), Trace Viewer, screenshot/video, mock API, test API, retries, sharding, tích hợp CI.
+
+Ưu điểm: cài nhanh, chạy nhanh, ít flaky, debug tốt. Nhược điểm: không tự có lớp BDD/báo cáo nghiệp vụ như Serenity (có thể kết hợp Cucumber).
+
+3. So sánh nhanh
+Tiêu chí	         Cucumber + Serenity + Screenplay	                   Playwright
+Ngôn ngữ chính	             Java	                             TypeScript/JS (cũng có Python, Java, .NET)
+Phong cách	          BDD (Gherkin) + Screenplay	             Code test trực tiếp (có thể thêm BDD)
+Độ khó cài đặt	          Trung bình (JDK, Maven)	             Dễ (1 lệnh npm)
+Báo cáo	              Living documentation của Serenity	         HTML report, Trace Viewer
+Phù hợp	              Dự án cần BA/QA/dev cùng đọc kịch bản	     Test E2E nhanh, hiện đại
