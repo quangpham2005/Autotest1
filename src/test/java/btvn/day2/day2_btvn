@@ -1,0 +1,40 @@
+1.
+//div[contains(@class, 'v2-rd-form')]
+//h3[contains(text(), 'Request')]
+//input[contains(@id, 'Business')]
+//input[contains(@id, 'Company')]
+//select[contains(@id, 'Use-Case')]
+//option[contains(@value, 'AI Test')]
+//textarea[contains(@id, 'Comments')]
+//button[contains(text(), 'demo')]
+//p[contains(text(), 'within')]
+
+ 2.
+//span[contains(text(), 'Checkout')]
+//div[@id='checkout_summary_container']
+
+
+//div[contains(text(), 'Backpack')]/ancestor::div[@class='cart_item']
+//div[contains(text(), 'Backpack')]/ancestor::div[@class='cart_item']/descendant::div[@class='cart_quantity']
+//div[contains(text(), 'Backpack')]
+//div[contains(text(), 'carry.all')]
+//div[contains(text(), 'Backpack')]/ancestor::div[@class='cart_item']/descendant::div[contains(@class, '_item_price')]
+
+//div[contains(text(), 'Payment')]
+//div[contains(text(), 'SauceCard')]
+//div[contains(text(), 'Shipping')]
+//div[contains(text(), 'Free')]
+//div[contains(@data-test, 'total-info-label')]
+//div[contains(@data-test, 'subtotal-label')]
+//div[contains(@data-test, 'tax-label')]
+//div[contains(@data-test, 'total-label')]
+//button[contains(@id, 'cancel')]
+//button[contains(@id, 'finish')]
+
+ 3.
+//div[@id = 'checkout_complete_container']
+//span[contains(text(), 'Checkout')]
+//h2[contains(text(), 'Thank you')]
+//div[contains(text(), 'Your order')]
+//button[@id = 'back-to-products']
+//button[@id = 'generate-pdf-order']
