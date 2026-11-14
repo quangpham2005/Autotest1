@@ -1,8 +1,14 @@
 package btvn.Day5;
 
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -10,28 +16,65 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.example.until.ReadExcel.readExcelData;
-
 public class DemoFormTest {
 
+    public static List<Map<String, String>> readExcelData(String filePath, String sheetName) {
+        List<Map<String, String>> data = new ArrayList<>();
+        DataFormatter formatter = new DataFormatter();
+
+        try (FileInputStream fis = new FileInputStream(filePath);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                throw new RuntimeException("Không tìm thấy sheet: " + sheetName);
+            }
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) return data;
+
+            int colCount = headerRow.getLastCellNum();
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Map<String, String> rowMap = new LinkedHashMap<>();
+                boolean isEmptyRow = true;
+
+                for (int j = 0; j < colCount; j++) {
+                    String header = formatter.formatCellValue(headerRow.getCell(j)).trim();
+                    String value = formatter.formatCellValue(row.getCell(j)).trim();
+                    if (header.isEmpty()) continue;
+                    if (!value.isEmpty()) isEmptyRow = false;
+                    rowMap.put(header, value);
+                }
+
+                if (!isEmptyRow) data.add(rowMap);
+            }
+        } catch (IOException e) {
+            System.err.println("Lỗi khi đọc file Excel: " + e.getMessage());
+        }
+        return data;
+    }
 
     private static final String EXCEL_PATH = "dataDemo.xlsx";
     private static final String SHEET_NAME = "Sheet1";
     private static final String FORM_URL = "https://saucelabs.com/request-demo";
 
-    // ===== LOCATOR (kiểm tra lại bằng F12 -> Inspect nếu không tìm thấy) =====
-    // Đã xác nhận từ log lần chạy trước:
+    // ===== LOCATOR =====
     private static final By EMAIL = By.id("Business-Email");
     private static final By COMPANY = By.id("Company");
     private static final By USE_CASE = By.id("Use-Case");
     private static final By COMMENTS = By.id("Comments");
-    // Đoán theo quy luật đặt id của form (chưa xác nhận):
-    // Dùng "bắt đầu bằng ... (không phân biệt hoa/thường)" để chịu được sai khác First-name / First-Name / First name
     private static final By FIRST_NAME = By.cssSelector("input[id^='first' i], input[name^='first' i]");
     private static final By LAST_NAME = By.cssSelector("input[id^='last' i], input[name^='last' i]");
     private static final By PHONE = By.cssSelector(
@@ -39,6 +82,74 @@ public class DemoFormTest {
     private static final By COUNTRY = By.cssSelector("select[id^='country' i], select[name^='country' i]");
     private static final By STATE = By.cssSelector("select[id^='state' i], select[name^='state' i]");
     private static final By CONSENT = By.cssSelector("input[type='checkbox']");
+
+    // ===== HÀM HỖ TRỢ =====
+
+    /** Chờ ô xuất hiện; không thấy thì trả về null (không ném lỗi). */
+    private static WebElement waitFor(WebDriverWait wait, By locator) {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        } catch (TimeoutException e) {
+            return null;
+        }
+    }
+
+    /** Điền ô văn bản. Giá trị trống -> bỏ qua. Trả về false nếu không thấy ô. */
+    private static boolean typeText(WebDriverWait wait, By locator, String value, String name) {
+        if (value == null || value.isEmpty()) {
+            System.out.println("  [BỎ QUA]       " + name + " (để trống)");
+            return true;
+        }
+        WebElement el = waitFor(wait, locator);
+        if (el == null) {
+            System.out.println("  [KHÔNG THẤY Ô] " + name + " (form chưa hiện ô này)");
+            return false;
+        }
+        el.clear();
+        el.sendKeys(value);
+        System.out.println("  [OK]           " + name + " = " + value);
+        return true;
+    }
+
+    /** Chọn dropdown. Giá trị trống -> bỏ qua. Trả về false nếu lỗi. */
+    private static boolean selectDropdown(WebDriverWait wait, By locator, String value, String name) {
+        if (value == null || value.isEmpty()) {
+            System.out.println("  [BỎ QUA]       " + name + " (để trống)");
+            return true;
+        }
+        WebElement el = waitFor(wait, locator);
+        if (el == null) {
+            System.out.println("  [KHÔNG THẤY Ô] " + name + " (form chưa hiện ô này)");
+            return false;
+        }
+        try {
+            selectByText(el, value);
+            System.out.println("  [OK]           " + name + " = " + value);
+            return true;
+        } catch (NoSuchElementException e) {
+            System.out.println("  [LỖI]          " + name + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static void tickConsent(WebDriver driver, String value) {
+        boolean wanted = value != null && (value.equalsIgnoreCase("yes")
+                || value.equalsIgnoreCase("true") || value.equals("1") || value.equalsIgnoreCase("x"));
+        if (!wanted) {
+            System.out.println("  [BỎ QUA]       Consent (không tick)");
+            return;
+        }
+        try {
+            WebElement box = driver.findElement(CONSENT);
+            if (!box.isSelected()) {
+                // Checkbox bị che bởi giao diện tuỳ biến -> click bằng JS
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", box);
+            }
+            System.out.println("  [OK]           Consent = tick");
+        } catch (Exception e) {
+            System.out.println("  [LỖI]          Consent: không tick được");
+        }
+    }
 
     /** Chọn lựa chọn trong dropdown: ưu tiên khớp hoàn toàn, sau đó khớp "có chứa" (không phân biệt hoa/thường). */
     private static void selectByText(WebElement selectEl, String text) {
@@ -63,71 +174,52 @@ public class DemoFormTest {
                 + "\". Các lựa chọn hiện có:" + available);
     }
 
+    // ===== MAIN =====
     public static void main(String[] args) throws InterruptedException {
         List<Map<String, String>> testData = readExcelData(EXCEL_PATH, SHEET_NAME);
-        WebDriver driver;
+        int index = 1;
+
         for (Map<String, String> row : testData) {
-            driver = new ChromeDriver();
-            driver.manage().window().maximize();
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-
             String email = row.get("Business Email");
-            String firstName = row.get("First name");
-            String lastName = row.get("Last name");
-            String company = row.get("Company");
-            String phone = row.get("Phone number");
-            String country = row.get("Country");
-            String state = row.get("State");
-            String useCase = row.get("Use Case");
-            String comments = row.get("Comments");
-            String consent = row.get("Consent");
+            System.out.println("=== Case " + index++ + ": "
+                    + (email == null || email.isEmpty() ? "<email trống>" : email) + " ===");
 
-            driver.get(FORM_URL);
+            WebDriver driver = new ChromeDriver();
+            try {
+                driver.manage().window().maximize();
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(8));
+                driver.get(FORM_URL);
 
-            // Form hiện dần các ô sau khi nhập email -> dùng wait cho từng ô
-            WebElement emailField = wait.until(ExpectedConditions.visibilityOfElementLocated(EMAIL));
-            emailField.sendKeys(email); // gõ email TRƯỚC -> các ô còn lại mới xuất hiện
+                // 1) Email trước: các ô còn lại chỉ hiện sau khi nhập email hợp lệ
+                typeText(wait, EMAIL, email, "Business Email");
 
-            WebElement firstNameField = wait.until(ExpectedConditions.visibilityOfElementLocated(FIRST_NAME));
-            firstNameField.sendKeys(firstName);
-
-            WebElement lastNameField = wait.until(ExpectedConditions.visibilityOfElementLocated(LAST_NAME));
-            lastNameField.sendKeys(lastName);
-
-            WebElement companyField = wait.until(ExpectedConditions.visibilityOfElementLocated(COMPANY));
-            companyField.sendKeys(company);
-
-            // Country, State, Use Case là dropdown -> dùng Select
-            // Chọn Country TRƯỚC Phone number (ô điện thoại có vẻ chỉ hiện sau khi chọn quốc gia)
-            WebElement countryField = wait.until(ExpectedConditions.visibilityOfElementLocated(COUNTRY));
-            selectByText(countryField, country);
-
-            if (state != null && !state.isEmpty()) {
-                WebElement stateField = wait.until(ExpectedConditions.visibilityOfElementLocated(STATE));
-                selectByText(stateField, state);
-            }
-
-            WebElement phoneField = wait.until(ExpectedConditions.visibilityOfElementLocated(PHONE));
-            phoneField.sendKeys(phone);
-
-            WebElement useCaseField = wait.until(ExpectedConditions.visibilityOfElementLocated(USE_CASE));
-            selectByText(useCaseField, useCase);
-
-            WebElement commentsField = wait.until(ExpectedConditions.visibilityOfElementLocated(COMMENTS));
-            commentsField.sendKeys(comments);
-
-            // Checkbox đồng ý nhận thông tin (bị che bởi giao diện tuỳ biến -> click bằng JS)
-            if (consent != null && (consent.equalsIgnoreCase("yes") || consent.equalsIgnoreCase("true"))) {
-                WebElement box = driver.findElement(CONSENT);
-                if (!box.isSelected()) {
-                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", box);
+                // Kiểm tra form có hiện các ô tiếp theo không (email trống / email cá nhân sẽ bị chặn)
+                if (waitFor(wait, FIRST_NAME) == null) {
+                    System.out.println("  -> Form KHÔNG hiện các ô tiếp theo (email trống hoặc bị từ chối). Bỏ qua case này.");
+                    continue; // finally vẫn chạy driver.quit()
                 }
+
+                // 2) Các ô còn lại; ô trống trong Excel sẽ được bỏ qua
+                typeText(wait, FIRST_NAME, row.get("First name"), "First name");
+                typeText(wait, LAST_NAME, row.get("Last name"), "Last name");
+                typeText(wait, COMPANY, row.get("Company"), "Company");
+
+                // Country/State TRƯỚC Phone (ô điện thoại chỉ hiện sau khi chọn quốc gia)
+                selectDropdown(wait, COUNTRY, row.get("Country"), "Country");
+                selectDropdown(wait, STATE, row.get("State"), "State");
+                typeText(wait, PHONE, row.get("Phone number"), "Phone number");
+
+                selectDropdown(wait, USE_CASE, row.get("Use Case"), "Use Case");
+                typeText(wait, COMMENTS, row.get("Comments"), "Comments");
+                tickConsent(driver, row.get("Consent"));
+
+                // Bỏ comment dòng dưới nếu muốn GỬI form thật:
+                // driver.findElement(By.cssSelector("input[type='submit']")).click();
+
+                Thread.sleep(2000); // dừng 2 giây để nhìn kết quả trước khi đóng
+            } finally {
+                driver.quit(); // luôn đóng trình duyệt dù case có lỗi
             }
-
-            // driver.findElement(By.cssSelector("input[type='submit']")).click();
-
-            Thread.sleep(3000); // dừng 3 giây để bạn nhìn kết quả trước khi đóng
-            driver.quit();
         }
     }
 }
