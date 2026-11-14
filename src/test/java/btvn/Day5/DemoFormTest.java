@@ -1,10 +1,5 @@
 package btvn.Day5;
 
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
@@ -16,55 +11,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.example.until.ReadExcel.readExcelData;
+
 public class DemoFormTest {
-
-    public static List<Map<String, String>> readExcelData(String filePath, String sheetName) {
-        List<Map<String, String>> data = new ArrayList<>();
-        DataFormatter formatter = new DataFormatter();
-
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = new XSSFWorkbook(fis)) {
-
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                throw new RuntimeException("Không tìm thấy sheet: " + sheetName);
-            }
-
-            Row headerRow = sheet.getRow(0);
-            if (headerRow == null) return data;
-
-            int colCount = headerRow.getLastCellNum();
-
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                Map<String, String> rowMap = new LinkedHashMap<>();
-                boolean isEmptyRow = true;
-
-                for (int j = 0; j < colCount; j++) {
-                    String header = formatter.formatCellValue(headerRow.getCell(j)).trim();
-                    String value = formatter.formatCellValue(row.getCell(j)).trim();
-                    if (header.isEmpty()) continue;
-                    if (!value.isEmpty()) isEmptyRow = false;
-                    rowMap.put(header, value);
-                }
-
-                if (!isEmptyRow) data.add(rowMap);
-            }
-        } catch (IOException e) {
-            System.err.println("Lỗi khi đọc file Excel: " + e.getMessage());
-        }
-        return data;
-    }
 
     private static final String EXCEL_PATH = "dataDemo.xlsx";
     private static final String SHEET_NAME = "Sheet1";
